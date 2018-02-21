@@ -235,8 +235,9 @@ public final class MySqlTaskContext extends MySqlJdbcContext {
         return SnapshotMode.parse(value, MySqlConnectorConfig.SNAPSHOT_MODE.defaultValueAsString());
     }
 
-    public boolean useMinimalSnapshotLocking() {
-        return config.getBoolean(MySqlConnectorConfig.SNAPSHOT_MINIMAL_LOCKING);
+    public MySqlConnectorConfig.SnapshotLockingMode lockingMode() {
+        String value = config.getString(MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE);
+        return MySqlConnectorConfig.SnapshotLockingMode.parse(value, MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE.defaultValueAsString());
     }
 
     public String getSnapshotSelectOverrides() {

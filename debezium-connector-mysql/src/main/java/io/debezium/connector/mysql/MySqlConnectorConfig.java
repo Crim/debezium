@@ -255,6 +255,55 @@ public class MySqlConnectorConfig extends CommonConnectorConfig {
     }
 
     /**
+     * Represents locking mode during snapshots.
+     * TODO - Fill in details.
+     */
+    public static enum SnapshotLockingMode implements EnumeratedValue {
+        STANDARD("standard"),
+        MINIMAL("minimal"),
+        NONE("none");
+
+        private final String value;
+
+        private SnapshotLockingMode(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String getValue() {
+            return value;
+        }
+
+        /**
+         * Determine if the supplied value is one of the predefined options.
+         *
+         * @param value the configuration property value; may not be null
+         * @return the matching option, or null if no match is found
+         */
+        public static SnapshotLockingMode parse(String value) {
+            if (value == null) return null;
+            value = value.trim();
+            for (SnapshotLockingMode option : SnapshotLockingMode.values()) {
+                if (option.getValue().equalsIgnoreCase(value)) return option;
+            }
+            return null;
+        }
+
+        /**
+         * Determine if the supplied value is one of the predefined options.
+         *
+         * @param value the configuration property value; may not be null
+         * @param defaultValue the default value; may be null
+         * @return the matching option, or null if no match is found and the non-null default is invalid
+         */
+        public static SnapshotLockingMode parse(String value, String defaultValue) {
+            SnapshotLockingMode mode = parse(value);
+            if (mode == null && defaultValue != null) mode = parse(defaultValue);
+            return mode;
+        }
+    }
+
+    /**
      * The set of predefined SecureConnectionMode options or aliases.
      */
     public static enum SecureConnectionMode implements EnumeratedValue {
@@ -723,18 +772,17 @@ public class MySqlConnectorConfig extends CommonConnectorConfig {
                                                            + "'never' to specify the connector should never run a snapshot and that upon first startup the connector should read from the beginning of the binlog. "
                                                            + "The 'never' mode should be used with care, and only when the binlog is known to contain all history.");
 
-    public static final Field SNAPSHOT_MINIMAL_LOCKING = Field.create("snapshot.minimal.locks")
-                                                              .withDisplayName("Use shortest database locking for snapshots")
-                                                              .withType(Type.BOOLEAN)
-                                                              .withWidth(Width.SHORT)
-                                                              .withImportance(Importance.LOW)
-                                                              .withDescription("Controls how long the connector holds onto the global read lock while it is performing a snapshot. The default is 'true', "
-                                                                      + "which means the connector holds the global read lock (and thus prevents any updates) for just the initial portion of the snapshot "
-                                                                      + "while the database schemas and other metadata are being read. The remaining work in a snapshot involves selecting all rows from "
-                                                                      + "each table, and this can be done using the snapshot process' REPEATABLE READ transaction even when the lock is no longer held and "
-                                                                      + "other operations are updating the database. However, in some cases it may be desirable to block all writes for the entire duration "
-                                                                      + "of the snapshot; in such cases set this property to 'false'.")
-                                                              .withDefault(true);
+    public static final Field SNAPSHOT_LOCKING_MODE = Field.create("snapshot.locking_mode")
+                                                    .withDisplayName("Locking mode")
+                                                    .withEnum(SnapshotLockingMode.class, SnapshotLockingMode.MINIMAL)
+                                                    .withWidth(Width.SHORT)
+                                                    .withImportance(Importance.LOW)
+                                                    .withDescription("The criteria for running a snapshot upon startup of the connector. "
+                                                        + "Options include: "
+                                                        + "'default' TODO Change this name..."
+                                                        + "'minimal' (the default) TODO this is the old default, 'minimal locking mode'"
+                                                        + "'none' TODO uses no table locks, could result in inconsistent snapshots.  Only should be used with schema_only/schema_only_recovery snapshot modes?"
+                                                    );
 
     public static final Field TIME_PRECISION_MODE = Field.create("time.precision.mode")
                                                          .withDisplayName("Time Precision")
@@ -837,7 +885,7 @@ public class MySqlConnectorConfig extends CommonConnectorConfig {
                                                      Heartbeat.HEARTBEAT_TOPICS_PREFIX, DATABASE_HISTORY, INCLUDE_SCHEMA_CHANGES,
                                                      TABLE_WHITELIST, TABLE_BLACKLIST, TABLES_IGNORE_BUILTIN,
                                                      DATABASE_WHITELIST, DATABASE_BLACKLIST,
-                                                     COLUMN_BLACKLIST, SNAPSHOT_MODE, SNAPSHOT_MINIMAL_LOCKING,
+                                                     COLUMN_BLACKLIST, SNAPSHOT_MODE, SNAPSHOT_LOCKING_MODE,
                                                      GTID_SOURCE_INCLUDES, GTID_SOURCE_EXCLUDES,
                                                      GTID_SOURCE_FILTER_DML_EVENTS,
                                                      TIME_PRECISION_MODE, DECIMAL_HANDLING_MODE,
@@ -881,7 +929,7 @@ public class MySqlConnectorConfig extends CommonConnectorConfig {
                     Heartbeat.HEARTBEAT_INTERVAL, Heartbeat.HEARTBEAT_TOPICS_PREFIX, EVENT_DESERIALIZATION_FAILURE_HANDLING_MODE, INCONSISTENT_SCHEMA_HANDLING_MODE,
                     CommonConnectorConfig.TOMBSTONES_ON_DELETE);
         Field.group(config, "Connector", CONNECTION_TIMEOUT_MS, KEEP_ALIVE, MAX_QUEUE_SIZE, MAX_BATCH_SIZE, POLL_INTERVAL_MS,
-                    SNAPSHOT_MODE, SNAPSHOT_MINIMAL_LOCKING, TIME_PRECISION_MODE, DECIMAL_HANDLING_MODE,
+                    SNAPSHOT_MODE, SNAPSHOT_LOCKING_MODE, TIME_PRECISION_MODE, DECIMAL_HANDLING_MODE,
                     BIGINT_UNSIGNED_HANDLING_MODE);
         return config;
     }
