@@ -15,7 +15,7 @@ public interface ChangeEventSourceMetricsMXBean {
     String getLastEvent();
     long getMilliSecondsSinceLastEvent();
     long getTotalNumberOfEventsSeen();
-    long getNumberOfEventsSkipped();
+    long getNumberOfEventsFiltered();
     String[] getMonitoredTables();
     int getQueueTotalCapacity();
     int getQueueRemainingCapacity();
